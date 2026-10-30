@@ -1,5 +1,7 @@
 package me.kichyassine.accountservice;
 
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.info.Info;
 import me.kichyassine.accountservice.domain.Account;
 import me.kichyassine.accountservice.domain.AccountStatus;
 import me.kichyassine.accountservice.repository.AccountRepository;
@@ -9,10 +11,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 
-import java.util.List;
-
 @SpringBootApplication
 @EnableDiscoveryClient
+@OpenAPIDefinition(info = @Info(title = "Account Service API", version = "1.0", description = "Account Service API Documentation"))
 public class AccountServiceApplication {
 
     public static void main(String[] args) {
