@@ -4,8 +4,10 @@ import com.zgamelogic.discord.annotations.DiscordController;
 import com.zgamelogic.discord.annotations.DiscordMapping;
 import me.kichyassine.ebankchatbot.agents.EBankAiAgent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 @DiscordController
+@ConditionalOnProperty(name = "discord.enabled", havingValue = "true")
 public class DiscordBot {
 
     private final EBankAiAgent ebankAiAgent;
