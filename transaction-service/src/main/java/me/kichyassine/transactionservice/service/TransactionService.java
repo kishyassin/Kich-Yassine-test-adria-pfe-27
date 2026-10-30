@@ -1,11 +1,13 @@
 package me.kichyassine.transactionservice.service;
 
 import me.kichyassine.transactionservice.domain.Transaction;
+import me.kichyassine.transactionservice.domain.event.TransactionCreatedEvent;
 import me.kichyassine.transactionservice.domain.model.Account;
 import me.kichyassine.transactionservice.feign.AccountRestClient;
 import me.kichyassine.transactionservice.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -21,6 +23,9 @@ public class TransactionService {
 
     @Autowired
     private AccountRestClient accountRestClient;
+
+    @Autowired(required = false)
+    private KafkaTemplate<String, TransactionCreatedEvent> kafkaTemplate;
 
     @Value("${bank.transaction.max-amount:1000}")
     private double maxAmount;
@@ -91,6 +96,25 @@ public class TransactionService {
 
         // 8. Mettre à jour le solde du compte (débit)
         accountRestClient.debitAccount(transaction.getAccountId(), transaction.getAmount().doubleValue(), transaction.getCurrency());
+
+        // 9. Publication asynchrone Kafka (bank.transactions.created avec clé accountId)
+        if (kafkaTemplate != null) {
+            try {
+                TransactionCreatedEvent event = TransactionCreatedEvent.builder()
+                        .eventId(UUID.randomUUID())
+                        .eventType("TransactionCreated")
+                        .transactionId(savedTransaction.getId())
+                        .accountId(savedTransaction.getAccountId())
+                        .amount(savedTransaction.getAmount())
+                        .currency(savedTransaction.getCurrency())
+                        .occurredAt(savedTransaction.getCreatedAt() != null ? savedTransaction.getCreatedAt() : Instant.now())
+                        .build();
+
+                kafkaTemplate.send("bank.transactions.created", savedTransaction.getAccountId().toString(), event);
+            } catch (Exception e) {
+                System.err.println("⚠️ Notification Kafka non envoyée : " + e.getMessage());
+            }
+        }
 
         savedTransaction.setAccount(account);
         return savedTransaction;
